@@ -13,6 +13,7 @@ members = [
     "admin-controls",
     "kyc-attestation",
     "species-registry",
+    "subscription-sponsorship",
 ]
 resolver = "2"
 
