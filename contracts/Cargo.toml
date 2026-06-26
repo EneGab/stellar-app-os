@@ -11,6 +11,7 @@ members = [
     "aggregate-impact-verifier",
     "tree-token",
     "admin-controls",
+    "carbon-credits",
     "kyc-attestation",
     "species-registry",
 ]

@@ -42,3 +42,23 @@ export interface CreditSelectionProps {
   projects: CarbonProject[];
   onSelectionChange?: (selection: CreditSelectionState) => void;
 }
+
+export interface SpeciesRate {
+  slug: string;
+  co2ScaledX100: number;
+  maturityYears: number;
+  updatedAt: number;
+}
+
+export interface OffsetEstimate {
+  slug: string;
+  ageYears: number;
+  gramsOffset: bigint;
+  kgOffset: number;
+}
+
+export interface SponsorOffset {
+  sponsor: string;
+  totalGrams: bigint;
+  totalKg: number;
+}
