@@ -84,6 +84,7 @@ pub enum EscrowStatus {
 #[derive(Clone, Debug)]
 pub struct EscrowRecord {
     pub donor: Address,
+    pub gift_recipient: Option<Address>,
     pub farmer: Address,
     pub token: Address,
     pub total_amount: i128,
@@ -108,6 +109,7 @@ pub struct EscrowRecord {
 pub struct BatchSlot {
     pub farmer: Address,
     pub amount: i128,
+    pub gift_recipient: Option<Address>,
 }
 
 // ── Contract ──────────────────────────────────────────────────────────────────
@@ -156,6 +158,37 @@ impl TreeEscrow {
         amount: i128,
         tree_count: i128,
     ) {
+        Self::deposit_internal(env, donor, None, farmer, token, amount, tree_count);
+    }
+
+    /// Sponsor trees as a gift - NFT receipt and carbon credits go to a different recipient address.
+    ///
+    /// `recipient_wallet` - the address that will receive the TREE tokens (NFT receipt and carbon credits)
+    /// `farmer` - the farmer to plant the trees
+    /// `token` - the token to use for payment (XLM or USDC)
+    /// `amount` - the total amount to deposit
+    /// `tree_count` - the maximum number of trees covered by this donation
+    pub fn sponsor_as_gift(
+        env: Env,
+        donor: Address,
+        recipient_wallet: Address,
+        farmer: Address,
+        token: Address,
+        amount: i128,
+        tree_count: i128,
+    ) {
+        Self::deposit_internal(env, donor, Some(recipient_wallet), farmer, token, amount, tree_count);
+    }
+
+    fn deposit_internal(
+        env: Env,
+        donor: Address,
+        gift_recipient: Option<Address>,
+        farmer: Address,
+        token: Address,
+        amount: i128,
+        tree_count: i128,
+    ) {
         donor.require_auth();
 
         if amount <= 0 {
@@ -177,6 +210,7 @@ impl TreeEscrow {
             &key,
             &EscrowRecord {
                 donor: donor.clone(),
+                gift_recipient,
                 farmer: farmer.clone(),
                 token,
                 total_amount: amount,
@@ -241,6 +275,7 @@ impl TreeEscrow {
                 &key,
                 &EscrowRecord {
                     donor: donor.clone(),
+                    gift_recipient: slot.gift_recipient.clone(),
                     farmer: slot.farmer.clone(),
                     token: token.clone(),
                     total_amount: slot.amount,
@@ -312,7 +347,9 @@ impl TreeEscrow {
             &rec.farmer,
             &tranche1,
         );
-        token::StellarAssetClient::new(&env, &tree_token).mint(&rec.donor, &tree_tokens);
+        
+        let recipient = rec.gift_recipient.clone().unwrap_or_else(|| rec.donor.clone());
+        token::StellarAssetClient::new(&env, &tree_token).mint(&recipient, &tree_tokens);
 
         rec.released += tranche1;
         rec.verified_tree_count = verified_tree_count;
@@ -326,7 +363,7 @@ impl TreeEscrow {
         env.events()
             .publish((symbol_short!("planted"), farmer), tranche1);
         env.events()
-            .publish((symbol_short!("treemint"), rec.donor.clone()), tree_tokens);
+            .publish((symbol_short!("treemint"), recipient), tree_tokens);
     }
 
     /// Verifier calls this after 6-month survival check passes.

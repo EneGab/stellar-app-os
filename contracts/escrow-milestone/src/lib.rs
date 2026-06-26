@@ -58,6 +58,7 @@ pub enum EscrowStatus {
 pub struct EscrowState {
     pub farmer: Address,
     pub funder: Address,
+    pub gift_recipient: Option<Address>,
     pub token: Address,
     pub total_amount: i128,
     pub released: i128,
@@ -96,6 +97,37 @@ impl EscrowMilestone {
         amount: i128,
         arbiter: Address,
     ) {
+        Self::deposit_internal(env, funder, None, farmer, token, amount, arbiter);
+    }
+
+    /// Sponsor trees as a gift - NFT receipt and carbon credits go to a different recipient address.
+    ///
+    /// `recipient_wallet` - the address that will receive the benefits
+    /// `farmer` - the farmer to plant the trees
+    /// `token` - the token to use for payment (XLM or USDC)
+    /// `amount` - the total amount to deposit
+    /// `arbiter` - the address authorised to adjudicate disputes
+    pub fn sponsor_as_gift(
+        env: Env,
+        funder: Address,
+        recipient_wallet: Address,
+        farmer: Address,
+        token: Address,
+        amount: i128,
+        arbiter: Address,
+    ) {
+        Self::deposit_internal(env, funder, Some(recipient_wallet), farmer, token, amount, arbiter);
+    }
+
+    fn deposit_internal(
+        env: Env,
+        funder: Address,
+        gift_recipient: Option<Address>,
+        farmer: Address,
+        token: Address,
+        amount: i128,
+        arbiter: Address,
+    ) {
         funder.require_auth();
         if amount <= 0 {
             panic!("amount must be positive");
@@ -115,6 +147,7 @@ impl EscrowMilestone {
         env.storage().persistent().set(&key, &EscrowState {
             farmer: farmer.clone(),
             funder,
+            gift_recipient,
             token,
             total_amount: amount,
             released: 0,
