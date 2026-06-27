@@ -599,6 +599,9 @@ impl TreeEscrow {
             &tranche2,
         );
 
+        // Record the Tranche2 payout for the farmer
+        Self::record_payout(&env, rec.farmer.clone(), tranche2, PayoutType::Tranche2);
+
         rec.released += tranche2;
         rec.status = EscrowStatus::Survived;
         rec.survival_proof = proof_hash;
@@ -1235,6 +1238,25 @@ impl TreeEscrow {
             i += 1;
         }
         unit
+    }
+
+    fn record_payout(env: &Env, planter: Address, amount: i128, payout_type: PayoutType) {
+        let key = DataKey::PayoutHistory(planter.clone());
+        let mut payouts: Vec<Payout> = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(Vec::new(env));
+
+        let payout = Payout {
+            planter,
+            amount,
+            payout_type,
+            timestamp: env.ledger().timestamp(),
+        };
+
+        payouts.push_back(payout);
+        env.storage().persistent().set(&key, &payouts);
     }
 }
 
