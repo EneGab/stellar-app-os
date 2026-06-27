@@ -1,5 +1,5 @@
 [package]
-name = "donation-escrow"
+name = "verifier-staking"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,13 +7,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-contract-utils = { path = "../contract-utils" }
-soroban-sdk = { version = "21.0.0", features = ["alloc"] }
+soroban-sdk = { version = "21.7.7", features = ["alloc"] }
 harvesta-errors = { path = "../harvesta-errors" }
 
 [dev-dependencies]
-contract-utils = { path = "../contract-utils" }
-soroban-sdk = { version = "21.0.0", features = ["testutils", "alloc"] }
+soroban-sdk = { version = "21.7.7", features = ["testutils", "alloc"] }
 
 [profile.release]
 opt-level = "z"
