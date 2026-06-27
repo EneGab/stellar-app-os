@@ -108,6 +108,7 @@ pub struct BatchSlot {
     pub farmer: Address,
     pub amount: i128,
     pub gift_recipient: Option<Address>,
+    pub referrer: Option<Address>,
 }
 
 /// Oracle-submitted survival report for a single tree.
@@ -329,6 +330,10 @@ impl TreeEscrow {
     ) {
         donor.require_auth();
 
+        if Self::is_paused(&env) {
+            panic!("contract is paused - deposits are not allowed");
+        }
+
         if amount <= 0 {
             panic_with_error!(&env, HarvestaError::AmountMustBePositive);
         }
@@ -389,6 +394,10 @@ impl TreeEscrow {
     /// Each slot represents 1 tree on a small area (0.01 hectares for density calculation).
     pub fn batch_deposit(env: Env, donor: Address, token: Address, slots: Vec<BatchSlot>) {
         donor.require_auth();
+
+        if Self::is_paused(&env) {
+            panic!("contract is paused - deposits are not allowed");
+        }
 
         let n = slots.len();
         if n == 0 {
@@ -597,6 +606,9 @@ impl TreeEscrow {
             &rec.farmer,
             &tranche2,
         );
+
+        // Record the Tranche2 payout for the farmer
+        Self::record_payout(&env, rec.farmer.clone(), tranche2, PayoutType::Tranche2);
 
         rec.released += tranche2;
         rec.status = EscrowStatus::Survived;
@@ -847,6 +859,10 @@ impl TreeEscrow {
     /// already has a contribution, their share is added to (not overwritten).
     pub fn contribute(env: Env, funder: Address, tree_id: u64, amount: i128) {
         funder.require_auth();
+
+        if Self::is_paused(&env) {
+            panic!("contract is paused - contributions are not allowed");
+        }
 
         if amount <= 0 {
             panic_with_error!(&env, HarvestaError::AmountMustBePositive);
@@ -1224,6 +1240,13 @@ impl TreeEscrow {
         false
     }
 
+    fn is_paused(env: &Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
+    }
+
     fn compute_token_unit(decimals: u32) -> i128 {
         let mut unit = 1i128;
         let mut i = 0u32;
@@ -1234,6 +1257,25 @@ impl TreeEscrow {
             i += 1;
         }
         unit
+    }
+
+    fn record_payout(env: &Env, planter: Address, amount: i128, payout_type: PayoutType) {
+        let key = DataKey::PayoutHistory(planter.clone());
+        let mut payouts: Vec<Payout> = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(Vec::new(env));
+
+        let payout = Payout {
+            planter,
+            amount,
+            payout_type,
+            timestamp: env.ledger().timestamp(),
+        };
+
+        payouts.push_back(payout);
+        env.storage().persistent().set(&key, &payouts);
     }
 }
 
