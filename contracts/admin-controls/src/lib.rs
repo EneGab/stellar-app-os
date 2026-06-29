@@ -26,7 +26,7 @@
 //! - Signers can be added/removed and the threshold updated — all via proposals.
 //! - Events are emitted on creation, approval, and execution of every proposal.
 
-use harvesta_errors::HarvestaError;
+use harvesta_errors::{GovernanceError, HarvestaError};
 use soroban_sdk::{
     contract, contractimpl, contracttype, panic_with_error, symbol_short, Address, Env, Vec,
 };
@@ -308,13 +308,13 @@ impl AdminControls {
         Self::require_admin(&env);
 
         if signers.len() == 0 {
-            panic_with_error!(&env, HarvestaError::MinimumOneSignerRequired);
+            panic_with_error!(&env, GovernanceError::MinimumOneSignerRequired);
         }
         if threshold == 0 {
-            panic_with_error!(&env, HarvestaError::ThresholdMustBePositive);
+            panic_with_error!(&env, GovernanceError::ThresholdMustBePositive);
         }
         if threshold > signers.len() {
-            panic_with_error!(&env, HarvestaError::ThresholdTooHigh);
+            panic_with_error!(&env, GovernanceError::ThresholdTooHigh);
         }
 
         env.storage().instance().set(&DataKey::Signers, &signers);
@@ -354,11 +354,11 @@ impl AdminControls {
             .storage()
             .instance()
             .get(&DataKey::Threshold)
-            .unwrap_or_else(|| panic_with_error!(&env, HarvestaError::MultisigNotInitialized));
+            .unwrap_or_else(|| panic_with_error!(&env, GovernanceError::MultisigNotInitialized));
 
         let signers = Self::load_signers(&env);
         if !Self::signer_exists(&signers, &proposer) {
-            panic_with_error!(&env, HarvestaError::NotASigner);
+            panic_with_error!(&env, GovernanceError::NotASigner);
         }
 
         let id: u32 = env
@@ -406,17 +406,17 @@ impl AdminControls {
 
         let signers = Self::load_signers(&env);
         if !Self::signer_exists(&signers, &approver) {
-            panic_with_error!(&env, HarvestaError::NotASigner);
+            panic_with_error!(&env, GovernanceError::NotASigner);
         }
 
         let mut proposal: Proposal = env
             .storage()
             .instance()
             .get(&DataKey::Proposal(proposal_id))
-            .unwrap_or_else(|| panic_with_error!(&env, HarvestaError::ProposalNotFound));
+            .unwrap_or_else(|| panic_with_error!(&env, GovernanceError::ProposalNotFound));
 
         if proposal.executed {
-            panic_with_error!(&env, HarvestaError::ProposalAlreadyExecuted);
+            panic_with_error!(&env, GovernanceError::ProposalAlreadyExecuted);
         }
 
         let mut approvals: Vec<Address> = env
@@ -426,7 +426,7 @@ impl AdminControls {
             .unwrap_or_else(|| Vec::new(&env));
 
         if Self::signer_exists(&approvals, &approver) {
-            panic_with_error!(&env, HarvestaError::AlreadyApproved);
+            panic_with_error!(&env, GovernanceError::AlreadyApproved);
         }
 
         approvals.push_back(approver.clone());
@@ -460,7 +460,7 @@ impl AdminControls {
         env.storage()
             .instance()
             .get(&DataKey::Proposal(proposal_id))
-            .unwrap_or_else(|| panic_with_error!(&env, HarvestaError::ProposalNotFound))
+            .unwrap_or_else(|| panic_with_error!(&env, GovernanceError::ProposalNotFound))
     }
 
     // ── internal ──────────────────────────────────────────────────────────────
@@ -545,7 +545,7 @@ impl AdminControls {
             ProposalKind::AddSigner(signer) => {
                 let mut signers = Self::load_signers(env);
                 if Self::signer_exists(&signers, signer) {
-                    panic_with_error!(env, HarvestaError::SignerAlreadyExists);
+                    panic_with_error!(env, GovernanceError::SignerAlreadyExists);
                 }
                 signers.push_back(signer.clone());
                 env.storage().instance().set(&DataKey::Signers, &signers);
@@ -555,7 +555,7 @@ impl AdminControls {
             ProposalKind::RemoveSigner(signer) => {
                 let signers = Self::load_signers(env);
                 if !Self::signer_exists(&signers, signer) {
-                    panic_with_error!(env, HarvestaError::SignerNotFound);
+                    panic_with_error!(env, GovernanceError::SignerNotFound);
                 }
                 let threshold: u32 = env
                     .storage()
@@ -563,7 +563,7 @@ impl AdminControls {
                     .get(&DataKey::Threshold)
                     .unwrap_or(1);
                 if signers.len() - 1 < threshold {
-                    panic_with_error!(env, HarvestaError::ThresholdTooHigh);
+                    panic_with_error!(env, GovernanceError::ThresholdTooHigh);
                 }
                 let new_signers = Self::remove_from_vec(env, &signers, signer);
                 env.storage().instance().set(&DataKey::Signers, &new_signers);
@@ -572,11 +572,11 @@ impl AdminControls {
             }
             ProposalKind::UpdateThreshold(new_threshold) => {
                 if *new_threshold == 0 {
-                    panic_with_error!(env, HarvestaError::ThresholdMustBePositive);
+                    panic_with_error!(env, GovernanceError::ThresholdMustBePositive);
                 }
                 let signers = Self::load_signers(env);
                 if *new_threshold > signers.len() {
-                    panic_with_error!(env, HarvestaError::ThresholdTooHigh);
+                    panic_with_error!(env, GovernanceError::ThresholdTooHigh);
                 }
                 env.storage()
                     .instance()
