@@ -83,6 +83,22 @@ pub enum HarvestaError {
     MaturityYearsMustBePositive = 63,
     SpeciesNotFound = 64,
 
+    // ── Carbon marketplace (100–107) ───────────────────────────────────────────
+    ListingAmountMustBePositive = 100,
+    PriceMustBePositive = 101,
+    ListingNotFound = 102,
+    ListingNotActive = 103,
+    InsufficientLiquidity = 104,
+    BuyAmountMustBePositive = 105,
+    SelfTrade = 106,
+    InvalidPriceRange = 107,
+    InvalidDecayRate = 108,
+    InvalidDuration = 109,
+    AuctionNotFound = 110,
+    AuctionNotActive = 111,
+    AuctionExpired = 112,
+    BidBelowReservePrice = 113,
+
     // ── Arithmetic overflows (80–81) ──────────────────────────────────────────
     TreeTokenMintOverflow = 80,
     TokenUnitOverflow = 81,
