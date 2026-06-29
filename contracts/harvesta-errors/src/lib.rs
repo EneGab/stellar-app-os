@@ -23,13 +23,13 @@ pub enum HarvestaError {
     AlreadyPaused = 5,
     NotPaused = 6,
     NoPendingAdmin = 7,
-    ContractMustBeTreeTokenAdmin = 8,
+    ContractMustBeTreeTokenAdm = 8,
 
     // ── Amount / value validation (9–15) ──────────────────────────────────────
     AmountMustBePositive = 9,
     TreeCountMustBePositive = 10,
     VerifiedCountMustBePositive = 11,
-    VerifiedCountExceedsDonation = 12,
+    VerifiedCountExceedsDon = 12,
     InvalidPayoutAmount = 13,
     BurnAmountMustBePositive = 14,
     SlotAmountMustBePositive = 15,
@@ -100,6 +100,25 @@ pub enum HarvestaError {
     AuctionNotActive = 111,
     AuctionExpired = 112,
     BidBelowReservePrice = 113,
+
+    // ── Location / ZK proofs (65–70) ──────────────────────────────────────────
+    OutsideNigeriaRegion = 65,
+    ProofCommitmentAlreadyReg = 66,
+    CommitmentAlreadySubmitted = 67,
+    CommitmentNotFound = 68,
+    CommitmentNotPending = 69,
+    InvalidProof = 70,
+
+    // ── Donation escrow (71–79) ───────────────────────────────────────────────
+    AlreadyProcessed = 71,
+    NotDonor = 72,
+    DonationAlreadyCancelled = 73,
+    DonationCancelled = 74,
+    IntervalNotElapsed = 75,
+    ProjectNotRegistered = 76,
+    AmountPerIntervalMustBePos = 77,
+    IntervalSecondsMustBePos = 78,
+    RecurringDonationNotFound = 79,
 
     // ── Arithmetic overflows (80–81) ──────────────────────────────────────────
     TreeTokenMintOverflow = 80,
