@@ -65,6 +65,28 @@ pub enum HarvestaError {
     AuctionExpired = 44,
     BidBelowReservePrice = 45,
 
+    // ── Farmer registry (35–37, 67-68) ───────────────────────────────────────────
+    FarmerAlreadyRegistered = 35,
+    FarmerNotRegistered = 36,
+    InvalidRegion = 37,
+    /// Caller is not a registered validator — gated read/write denied.
+    NotValidator = 67,
+    /// The SHA-256 hash supplied by the caller does not match the one stored
+    /// on-chain for this farmer's identity document.
+    HashMismatch = 68,
+    // ── Farm Plots (150–151) ──────────────────────────────────────────────
+    InvalidCoordinatesCount = 150,
+    PlotAlreadyExists = 151,
+
+    // ── Species registry (62–64, 69-70) ──────────────────────────────────────────────
+    Co2MustBePositive = 62,
+    MaturityYearsMustBePositive = 63,
+    SpeciesNotFound = 64,
+    InvasiveSpecies = 67,
+    HighWaterUse = 68,
+    InvasiveSpecies = 69,
+    HighWaterUse = 70,
+
     // ── Arithmetic overflows (48–49) ──────────────────────────────────────────
     TreeTokenMintOverflow = 48,
     TokenUnitOverflow = 49,
@@ -73,4 +95,12 @@ pub enum HarvestaError {
     NotAVerifier = 50,
     AlreadyVoted = 51,
     VerifierAlreadyRegistered = 52,
+    // ── Tree registry (88–90) ─────────────────────────────────────────────────
+    NotFound = 88,
+    InvalidStatus = 89,
+    NotAuthorized = 90,
+
+    // ── Arithmetic overflows (86–87) ──────────────────────────────────────────
+    TreeTokenMintOverflow = 86,
+    TokenUnitOverflow = 87,
 }
