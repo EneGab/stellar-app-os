@@ -34,6 +34,7 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, panic_with_error, symbol_short, Address, Bytes,
     BytesN, Env, IntoVal, String,
 };
+use admin_controls::AdminControlsClient;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -81,14 +82,17 @@ pub struct FarmerRegistry;
 impl FarmerRegistry {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    /// One-time initialisation — stores the admin address.
-    pub fn initialize(env: Env, admin: Address) {
+    /// One-time initialisation — stores the admin address and admin-controls address.
+    pub fn initialize(env: Env, admin: Address, admin_controls: Address) {
         if env.storage().instance().has(&symbol_short!("ADMIN")) {
             panic_with_error!(&env, HarvestaError::AlreadyInitialized);
         }
         env.storage()
             .instance()
             .set(&symbol_short!("ADMIN"), &admin);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ADMC"), &admin_controls);
     }
 
     // ── Validator management (admin-only) ─────────────────────────────────────
@@ -98,6 +102,7 @@ impl FarmerRegistry {
     /// Only the contract admin may call this.
     /// Emits `(ValidReg, validator)`.
     pub fn register_validator(env: Env, admin: Address, validator: Address) {
+        Self::assert_not_paused(&env);
         admin.require_auth();
         Self::require_admin(&env, &admin);
 
@@ -115,6 +120,7 @@ impl FarmerRegistry {
     /// Only the contract admin may call this.
     /// Emits `(ValidRev, validator)`.
     pub fn revoke_validator(env: Env, admin: Address, validator: Address) {
+        Self::assert_not_paused(&env);
         admin.require_auth();
         Self::require_admin(&env, &admin);
 
@@ -160,6 +166,7 @@ impl FarmerRegistry {
         doc_preimage: Bytes,
         region_geohash: String,
     ) -> FarmerProfile {
+        Self::assert_not_paused(&env);
         validator.require_auth();
         wallet_address.require_auth();
 
@@ -223,6 +230,7 @@ impl FarmerRegistry {
         new_doc_preimage: Bytes,
         new_region_geohash: String,
     ) -> FarmerProfile {
+        Self::assert_not_paused(&env);
         validator.require_auth();
         wallet_address.require_auth();
 
@@ -347,6 +355,7 @@ impl FarmerRegistry {
     ///
     /// Only the farmer's own wallet may call this.
     pub fn set_available(env: Env, wallet_address: Address, available: bool) {
+        Self::assert_not_paused(&env);
         wallet_address.require_auth();
 
         if !env
@@ -386,6 +395,19 @@ impl FarmerRegistry {
         if *caller != admin {
             panic_with_error!(env, HarvestaError::Unauthorized);
         }
+    }
+
+    fn admin_controls(env: &Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&symbol_short!("ADMC"))
+            .unwrap_or_else(|| panic_with_error!(env, HarvestaError::NotInitialized))
+    }
+
+    fn assert_not_paused(env: &Env) {
+        let admin_controls_addr = Self::admin_controls(env);
+        let admin_controls_client = AdminControlsClient::new(env, &admin_controls_addr);
+        admin_controls_client.assert_not_paused();
     }
 
     fn require_validator(env: &Env, caller: &Address) {
@@ -457,13 +479,19 @@ mod tests {
         let env = Env::default();
         env.mock_all_auths();
 
+        // Deploy admin-controls contract
+        let admin_controls_id = env.register_contract(None, admin_controls::AdminControls);
+        let admin_controls_client = admin_controls::AdminControlsClient::new(&env, &admin_controls_id);
+        let admin = Address::generate(&env);
+        let oracle = Address::generate(&env);
+        admin_controls_client.initialize(&admin, &oracle);
+
         let contract_id = env.register_contract(None, FarmerRegistry);
         let client = FarmerRegistryClient::new(&env, &contract_id);
 
-        let admin = Address::generate(&env);
         let validator = Address::generate(&env);
 
-        client.initialize(&admin);
+        client.initialize(&admin, &admin_controls_id);
         client.register_validator(&admin, &validator);
 
         (env, admin, validator, client)

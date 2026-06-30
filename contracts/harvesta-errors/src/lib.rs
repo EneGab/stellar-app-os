@@ -48,6 +48,8 @@ pub enum HarvestaError {
     Co2MustBePositive = 62,
     MaturityYearsMustBePositive = 63,
     SpeciesNotFound = 64,
+    InvasiveSpecies = 67,
+    HighWaterUse = 68,
     InvasiveSpecies = 69,
     HighWaterUse = 70,
 
